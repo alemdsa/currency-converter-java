@@ -1,56 +1,59 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven'
+        jdk 'JDK'
+    }
+
     environment {
-        APP_NAME = 'currency-converter'
-        JAR_NAME = 'currency-converter-1.0.0.jar'
-        DOCKER_IMAGE = "myrepo/${APP_NAME}:latest"
+        MAVEN_OPTS = "-Dmaven.test.failure.ignore=false"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/alemdsa/currency-converter-java'
+                git 'https://github.com/alemdsa/currency-converter-java.git'
             }
         }
 
-        stage('Build & Test') {
+        stage('Build & Unit Test') {
             steps {
+                echo "Building project and running unit tests..."
                 sh 'mvn clean verify'
             }
         }
 
-        stage('Package') {
+        stage('Publish Test Results') {
             steps {
-                sh 'mvn package -DskipTests'
+                junit '**/target/surefire-reports/*.xml'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}", ".")
+                    docker.build("currency-converter")
                 }
             }
         }
 
         stage('Run (Staging)') {
             steps {
-                sh 'docker run -d -p 8080:8080 --name currency-converter-container ${DOCKER_IMAGE}'
+                echo 'Simulating deployment to staging...'
             }
         }
     }
 
     post {
         always {
-            echo 'Cleaning up...'
-            sh 'docker rm -f currency-converter-container || true'
+            echo 'Pipeline finished.'
         }
         failure {
-            echo 'Build failed!'
+            echo 'Pipeline failed!'
         }
         success {
-            echo 'Build succeeded!'
+            echo 'Pipeline succeeded!'
         }
     }
 }
