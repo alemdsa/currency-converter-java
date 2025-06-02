@@ -1,35 +1,56 @@
 pipeline {
     agent any
 
+    environment {
+        APP_NAME = 'currency-converter'
+        JAR_NAME = 'currency-converter-1.0.0.jar'
+        DOCKER_IMAGE = "myrepo/${APP_NAME}:latest"
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/alemdsa/currency-converter-java.git'
+                git 'https://github.com/alemdsa/currency-converter-java'
             }
         }
 
         stage('Build & Test') {
             steps {
-                script {
-                    docker.image('maven:3.8.7-openjdk-17').inside('-v /root/.m2:/root/.m2') {
-                        sh 'mvn clean install'
-                    }
-                }
+                sh 'mvn clean verify'
+            }
+        }
+
+        stage('Package') {
+            steps {
+                sh 'mvn package -DskipTests'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("currency-converter")
+                    docker.build("${DOCKER_IMAGE}", ".")
                 }
             }
         }
 
         stage('Run (Staging)') {
             steps {
-                echo 'Simulating deployment to staging...'
+                sh 'docker run -d -p 8080:8080 --name currency-converter-container ${DOCKER_IMAGE}'
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up...'
+            sh 'docker rm -f currency-converter-container || true'
+        }
+        failure {
+            echo 'Build failed!'
+        }
+        success {
+            echo 'Build succeeded!'
         }
     }
 }
