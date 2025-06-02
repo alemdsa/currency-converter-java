@@ -10,7 +10,9 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                sh 'mvn clean install'
+                docker.image('maven:3.8.7-openjdk-17').inside {
+                    sh 'mvn clean install'
+                }
             }
         }
 
