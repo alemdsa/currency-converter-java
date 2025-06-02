@@ -33,7 +33,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("currency-converter")
+                    sh 'docker build -t currency-converter .'
                 }
             }
         }
