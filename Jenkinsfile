@@ -13,7 +13,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/alemdsa/currency-converter-java.git'
+                git branch: 'main', url: 'https://github.com/alemdsa/currency-converter-java.git'
             }
         }
 
