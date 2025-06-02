@@ -9,10 +9,14 @@ pipeline {
         }
 
         stage('Build & Test') {
-            steps {
-                docker.image('maven:3.8.7-openjdk-17').inside {
-                    sh 'mvn clean install'
+            agent {
+                docker {
+                    image 'maven:3.8.7-openjdk-17'
+                    args '-v /root/.m2:/root/.m2'
                 }
+            }
+            steps {
+                sh 'mvn clean install'
             }
         }
 
